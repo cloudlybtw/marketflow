@@ -1,7 +1,20 @@
 package port
 
-import "marketflow/internal/core/domain"
+import (
+	"context"
+	"marketflow/internal/core/domain"
+)
 
-type PriceRepository interface{}
+type PriceRepository interface {
+	SaveAggregated(data domain.AggregatedData) error
+	SaveLatest(ctx context.Context, exchange, symbol string, price float64) error
+}
 
-type PriceService interface{}
+type PriceService interface {
+	SavePrice(ctx context.Context, in <-chan domain.Message)
+	// GetLatest(ctx context.Context, exchange string, pair string)
+	// GetHighest()
+	// GetLowest()
+	// GetAverage()
+	// CheckHealth()
+}
