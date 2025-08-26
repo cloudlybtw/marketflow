@@ -6,8 +6,9 @@ import (
 )
 
 type PriceRepository interface {
-	SaveAggregated(data domain.AggregatedData) error
-	SaveLatest(ctx context.Context, exchange, symbol string, price float64) error
+	// SaveAggregated(data domain.AggregatedData) error
+	SaveLatest(ctx context.Context, exchange, symbol string, price float64)
+	Health(ctx context.Context) error
 }
 
 type PriceService interface {
@@ -16,5 +17,5 @@ type PriceService interface {
 	// GetHighest()
 	// GetLowest()
 	// GetAverage()
-	// CheckHealth()
+	CheckHealth(ctx context.Context) error
 }

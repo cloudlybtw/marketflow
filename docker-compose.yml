@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    stop_grace_period: 20s
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DB=${REDIS_DB:-0}
+      - EXCHANGE1_NAME=${EXCHANGE1_NAME}
+      - EXCHANGE1_HOST=exchange1  # Changed from localhost to service name
+      - EXCHANGE1_PORT=${EXCHANGE1_PORT}
+      - EXCHANGE2_NAME=${EXCHANGE2_NAME}
+      - EXCHANGE2_HOST=exchange2  # Changed from localhost to service name
+      - EXCHANGE2_PORT=${EXCHANGE2_PORT}
+      - EXCHANGE3_NAME=${EXCHANGE3_NAME}
+      - EXCHANGE3_HOST=exchange3  # Changed from localhost to service name
+      - EXCHANGE3_PORT=${EXCHANGE3_PORT}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  db:
+    image: postgres:15
+    environment:
+      - TZ=${TZ}
+      - PGTZ=${TZ}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./internal/adapter/storage/db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    networks:
+      - app-network
+
+  exchange1:
+    image: terow/exchanges:v1
+    ports:
+      - "40101:40101"
+    depends_on:
+      - redis
+      - db
+    restart: unless-stopped
+    networks:
+      - app-network  # Added network
+
+  exchange2:
+    image: terow/exchanges:v2
+    ports:
+      - "40102:40102"
+    depends_on:
+      - redis
+      - db
+    restart: unless-stopped
+    networks:
+      - app-network  # Added network
+
+  exchange3:
+    image: terow/exchanges:v3
+    ports:
+      - "40103:40103"
+    depends_on:
+      - redis
+      - db
+    restart: unless-stopped
+    networks:
+      - app-network  # Added network
+
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis_data:
