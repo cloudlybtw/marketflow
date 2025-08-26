@@ -112,3 +112,24 @@ func (r *RedisClient) GetPriceHistoryByExchange(pair, exchange string, from, to 
 	}
 	return prices, err
 }
+
+func (r *RedisClient) GetLatestPrice(ctx context.Context, exchange, pair string) (float64, error) {
+	var f float64
+	var err error
+
+	if exchange != "" {
+		f, err = r.client.Get(ctx, "L:"+exchange+":"+pair).Float64()
+		if err != nil {
+			r.logger.Error(err.Error())
+			return -1, err
+		}
+	} else {
+		f, err = r.client.Get(ctx, "L:"+pair).Float64()
+		if err != nil {
+			r.logger.Error(err.Error())
+			return -1, err
+		}
+	}
+
+	return f, nil
+}

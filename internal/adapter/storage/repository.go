@@ -34,3 +34,11 @@ func (p *PriceRepository) Health(ctx context.Context) error {
 func (p *PriceRepository) SaveLatest(ctx context.Context, exchange, pair string, price float64) {
 	p.Redis.StorePriceUpdate(ctx, exchange, pair, price)
 }
+
+func (p *PriceRepository) GetLatest(ctx context.Context, symbol string) (float64, error) {
+	return p.Redis.GetLatestPrice(ctx, "", symbol)
+}
+
+func (p *PriceRepository) GetLatestByExchange(ctx context.Context, exchange, symbol string) (float64, error) {
+	return p.Redis.GetLatestPrice(ctx, exchange, symbol)
+}

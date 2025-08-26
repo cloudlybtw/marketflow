@@ -2,7 +2,10 @@ package service
 
 import (
 	"context"
+	"errors"
+	"time"
 
+	"marketflow/internal/core/domain"
 	"marketflow/internal/core/port"
 )
 
@@ -18,4 +21,28 @@ func NewPriceService(r port.PriceRepository) *PriceService {
 
 func (s *PriceService) CheckHealth(ctx context.Context) error {
 	return s.repo.Health(ctx)
+}
+
+func (s *PriceService) GetLatest(ctx context.Context, exchange string, pair string) (*domain.PriceUpdate, error) {
+	var num float64
+	var err error
+	switch {
+	case exchange == "":
+		num, err = s.repo.GetLatest(ctx, pair)
+		if err != nil {
+			return nil, err
+		}
+	case exchange != "":
+		num, err = s.repo.GetLatestByExchange(ctx, exchange, pair)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, errors.New("invalid request")
+	}
+	return &domain.PriceUpdate{
+		Symbol:    pair,
+		Price:     num,
+		Timestamp: time.Now().Unix(),
+	}, nil
 }
