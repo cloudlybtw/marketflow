@@ -65,8 +65,8 @@ func (h *HTTPHandler) GetPriceInfo(w http.ResponseWriter, r *http.Request) {
 	// 	price, err = h.priceService.GetAverage(exchange, pair, duration)
 	// case "highest":
 	// 	price, err = h.priceService.GetHighest(exchange, pair, duration)
-	// case "lowest":
-	// 	price, err = h.priceService.GetLowest(exchange, pair, duration)
+	case "lowest":
+		price, err = h.priceService.GetLowest(exchange, pair, duration)
 	default:
 		err = errors.New("invalid price info requested")
 	}

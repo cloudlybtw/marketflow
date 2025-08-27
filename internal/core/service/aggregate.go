@@ -24,7 +24,7 @@ func (s *PriceService) SavePrice(ctx context.Context, in <-chan domain.Message) 
 		case <-ctx.Done():
 			if len(aggregation.Exchanges) > 0 {
 				aggregation.WindowEnd = time.Now()
-				// s.repo.SaveAggregated(aggregation)
+				s.repo.SaveAggregated(aggregation)
 			}
 			return
 
@@ -82,7 +82,7 @@ func (s *PriceService) SavePrice(ctx context.Context, in <-chan domain.Message) 
 		case <-ticker.C:
 			if len(aggregation.Exchanges) > 0 {
 				aggregation.WindowEnd = time.Now()
-				// s.repo.SaveAggregated(aggregation)
+				s.repo.SaveAggregated(aggregation)
 
 				// Reset for new window
 				aggregation = domain.AggregatedData{
