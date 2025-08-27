@@ -79,13 +79,34 @@ func (h *HTTPHandler) GetPriceInfo(w http.ResponseWriter, r *http.Request) {
 
 func (h *HTTPHandler) SwitchMode(w http.ResponseWriter, r *http.Request) {
 	split := strings.Split(r.URL.Path, "/")
-	newMode := split[2]
-	if (newMode == "live" && h.mode.Live) || (newMode == "test" && !h.mode.Live) {
-		Error(w, http.StatusBadRequest, "Mode cannot be changed to current mode")
+	if len(split) < 3 {
+		Error(w, http.StatusBadRequest, "Invalid mode path")
 		return
 	}
-	// go h.mode.SwitchMode()
-	SendResponse(w, r, nil, "Mode changed", http.StatusOK)
+
+	newMode := split[2] // "live" или "test"
+
+	var wantLive bool
+	switch newMode {
+	case "live":
+		wantLive = true
+	case "test":
+		wantLive = false
+	default:
+		Error(w, http.StatusBadRequest, "Unknown mode: "+newMode)
+		return
+	}
+
+	if h.mode.Live == wantLive {
+		// уже в этом режиме → не ошибка, а просто ок
+		SendResponse(w, r, nil, "Already in "+newMode+" mode", http.StatusOK)
+		return
+	}
+
+	// реально переключаем
+	go h.mode.SwitchMode(newMode)
+
+	SendResponse(w, r, nil, "Mode changed to "+newMode, http.StatusOK)
 }
 
 func (h *HTTPHandler) Health(w http.ResponseWriter, r *http.Request) {

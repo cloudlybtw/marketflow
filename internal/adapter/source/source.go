@@ -35,9 +35,9 @@ func NewModeAdapter(exchanges []config.Exchange, serv *service.PriceService) *Mo
 }
 
 func NewExchangeAdapter(ctx context.Context, exchange config.Exchange, out chan<- domain.Message) ExchangeAdapter {
-	// if !Live {
-	// 	return NewMockExchange("test_" + exchange.Name)
-	// }
+	if !Live {
+		return NewMockExchange([]config.Exchange{exchange}, slog.Default())
+	}
 	return NewTCPExchange(ctx, exchange, out)
 }
 
@@ -78,9 +78,21 @@ func (m *ModeAdapter) Start(ctx context.Context) {
 	slog.Info("All workers shut down")
 }
 
-func (m *ModeAdapter) SwitchMode() {
-	Live = !Live
-	m.Live = !m.Live
+func (m *ModeAdapter) SwitchMode(mode string) {
+	var newMode bool
+	if mode == "live" {
+		newMode = true
+	} else {
+		newMode = false
+	}
+
+	if m.Live == newMode {
+		slog.Info("Already in mode:", "mode", mode)
+		return
+	}
+
+	m.Live = newMode
+	Live = newMode
 
 	// Cancel existing pipeline if running
 	if m.cancelFunc != nil {
@@ -91,4 +103,6 @@ func (m *ModeAdapter) SwitchMode() {
 	ctx, cancel := context.WithCancel(context.Background())
 	m.cancelFunc = cancel
 	go m.Start(ctx)
+
+	slog.Info("Switched mode", "mode", mode)
 }
