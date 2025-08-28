@@ -61,8 +61,8 @@ func (h *HTTPHandler) GetPriceInfo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		price, err = h.priceService.GetLatest(r.Context(), exchange, pair)
-	// case "average":
-	// 	price, err = h.priceService.GetAverage(exchange, pair, duration)
+	case "average":
+		price, err = h.priceService.GetAverage(exchange, pair, duration)
 	case "highest":
 		price, err = h.priceService.GetHighest(exchange, pair, duration)
 	case "lowest":
@@ -98,12 +98,10 @@ func (h *HTTPHandler) SwitchMode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if h.mode.Live == wantLive {
-		// уже в этом режиме → не ошибка, а просто ок
 		SendResponse(w, r, nil, "Already in "+newMode+" mode", http.StatusOK)
 		return
 	}
 
-	// реально переключаем
 	go h.mode.SwitchMode(newMode)
 
 	SendResponse(w, r, nil, "Mode changed to "+newMode, http.StatusOK)

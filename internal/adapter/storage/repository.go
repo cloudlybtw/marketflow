@@ -75,11 +75,11 @@ func (p *PriceRepository) GetLowestByExchange(exchange, symbol string, duration 
 
 func (p *PriceRepository) GetLowestGlobal(symbol string, duration time.Duration) (float64, error) {
 	if duration == 0 {
-		// вариант без периода: берём из Postgres
+		
 		return p.Postgres.GetLowestGlobal(symbol, duration)
 	}
 
-	// вариант с периодом: достаём историю из Redis по всем exchange
+	
 	exchanges := []string{"exchange1", "exchange2", "exchange3"}
 	var minN float64
 	for _, ex := range exchanges {
@@ -122,8 +122,7 @@ func (p *PriceRepository) GetHighestGlobal(symbol string, duration time.Duration
 		return p.Postgres.GetHighestGlobal(symbol, duration)
 	}
 
-	// если Redis — аналогично lowest, только ищем максимум
-	exchanges := []string{"exchange1", "exchange2", "exchange3"} // можно в конфиг
+	exchanges := []string{"exchange1", "exchange2", "exchange3"} 
 	var maxN float64
 	for _, ex := range exchanges {
 		prices, err := p.Redis.GetPriceHistoryByExchange(symbol, ex, time.Now().Add(-duration), time.Now())
@@ -142,4 +141,50 @@ func (p *PriceRepository) GetHighestGlobal(symbol string, duration time.Duration
 	}
 
 	return maxN, nil
+}
+
+
+func (p *PriceRepository) GetAverageByExchange(exchange, symbol string, duration time.Duration) (float64, error) {
+	if duration == 0 {
+		return p.Postgres.GetAverageByExchange(exchange, symbol)
+	}
+	prices, err := p.Redis.GetPriceHistoryByExchange(symbol, exchange, time.Now().Add(-duration), time.Now())
+	if err != nil || len(prices) == 0 {
+		return -1, err
+	}
+	var avgN float64
+	for _, price := range prices {
+		if price.Price > avgN {
+			avgN = price.Price
+		}
+	}
+	return avgN, nil
+}
+
+
+func (p *PriceRepository) GetAverageGlobal(symbol string, duration time.Duration) (float64, error) {
+	if duration == 0 {
+		return p.Postgres.GetAverageGlobal(symbol, duration)
+	}
+
+
+	exchanges := []string{"exchange1", "exchange2", "exchange3"} 
+	var avgN float64
+	for _, ex := range exchanges {
+		prices, err := p.Redis.GetPriceHistoryByExchange(symbol, ex, time.Now().Add(-duration), time.Now())
+		if err != nil || len(prices) == 0 {
+			continue
+		}
+		for _, price := range prices {
+			if price.Price > avgN {
+				avgN = price.Price
+			}
+		}
+	}
+
+	if avgN == 0 {
+		return -1, fmt.Errorf("no prices found for %s in last %v", symbol, duration)
+	}
+
+	return avgN, nil
 }

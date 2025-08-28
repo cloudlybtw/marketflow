@@ -94,3 +94,26 @@ func (s *PriceService) GetHighest(exchange, pair string, duration time.Duration)
 		Timestamp: time.Now().Unix(),
 	}, nil
 }
+
+func (s *PriceService) GetAverage(exchange, pair string, duration time.Duration) (*domain.PriceUpdate, error) {
+	var num float64
+	var err error
+
+	if exchange == "" {
+		num, err = s.repo.GetAverageGlobal(pair, duration)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		num, err = s.repo.GetAverageByExchange(exchange, pair, duration)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &domain.PriceUpdate{
+		Symbol:    pair,
+		Price:     num,
+		Timestamp: time.Now().Unix(),
+	}, nil
+}
