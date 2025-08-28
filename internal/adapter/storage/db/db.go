@@ -48,7 +48,7 @@ func (p *PostgresClient) SaveAggregatedData(data domain.AggregatedData) error {
 func (p *PostgresClient) GetLowestByExchange(exchange, symbol string) (float64, string, int64, error) {
 	var minN float64
 	var exN string
-	var tsN int64
+	var tsN time.Time
 	err := p.Db.QueryRow(`
 	SELECT min_price, exchange, timestamp
 	FROM prices
@@ -61,13 +61,13 @@ func (p *PostgresClient) GetLowestByExchange(exchange, symbol string) (float64, 
 		return -1, "", time.Now().Unix(), err
 	}
 
-	return minN, exN, tsN, nil
+	return minN, exN, tsN.Unix(), nil
 }
 
 func (p *PostgresClient) GetLowestGlobal(symbol string, duration time.Duration) (float64, string, int64, error) {
 	var minN sql.NullFloat64
 	var exN string
-	var tsN int64
+	var tsN time.Time
 	query := `
         SELECT min_price, exchange, timestamp
 		FROM prices
@@ -92,13 +92,13 @@ func (p *PostgresClient) GetLowestGlobal(symbol string, duration time.Duration) 
 		return -1, "", time.Now().Unix(), fmt.Errorf("no prices found for %s in last %v", symbol, duration)
 	}
 
-	return minN.Float64, exN, tsN, nil
+	return minN.Float64, exN, tsN.Unix(), nil
 }
 
 func (p *PostgresClient) GetHighestByExchange(exchange, symbol string) (float64, string, int64, error) {
 	var maxN float64
 	var exN string
-	var tsN int64
+	var tsN time.Time
 	err := p.Db.QueryRow(`
         SELECT max_price, exchange, timestamp
         FROM prices
@@ -112,13 +112,13 @@ func (p *PostgresClient) GetHighestByExchange(exchange, symbol string) (float64,
 		return -1, "", time.Now().Unix(), err
 	}
 
-	return maxN, exN, tsN, nil
+	return maxN, exN, tsN.Unix(), nil
 }
 
 func (p *PostgresClient) GetHighestGlobal(symbol string, duration time.Duration) (float64, string, int64, error) {
 	var maxN sql.NullFloat64
 	var exN string
-	var tsN int64
+	var tsN time.Time
 	query := `
         SELECT max_price, exchange, timestamp
 		FROM prices
@@ -143,12 +143,12 @@ func (p *PostgresClient) GetHighestGlobal(symbol string, duration time.Duration)
 		return -1, "", time.Now().Unix(), fmt.Errorf("no prices found for %s in last %v", symbol, duration)
 	}
 
-	return maxN.Float64, exN, tsN, nil
+	return maxN.Float64, exN, tsN.Unix(), nil
 }
 
 func (p *PostgresClient) GetAverageByExchange(exchange, symbol string) (float64, string, int64, error) {
 	var avgN float64
-	var tsN int64
+	var tsN time.Time
 	err := p.Db.QueryRow(`
         SELECT AVG(average_price), $2 as exchange, MAX(timestamp)
         FROM prices
@@ -160,12 +160,12 @@ func (p *PostgresClient) GetAverageByExchange(exchange, symbol string) (float64,
 		return -1, "", time.Now().Unix(), err
 	}
 
-	return avgN, exchange, tsN, nil
+	return avgN, exchange, tsN.Unix(), nil
 }
 
 func (p *PostgresClient) GetAverageGlobal(symbol string, duration time.Duration) (float64, string, int64, error) {
 	var avgN sql.NullFloat64
-	var tsN int64
+	var tsN time.Time
 	exN := ""
 	query := `
         SELECT AVG(average_price), '' as exchange, MAX(timestamp)
@@ -189,5 +189,5 @@ func (p *PostgresClient) GetAverageGlobal(symbol string, duration time.Duration)
 		return -1, "", time.Now().Unix(), fmt.Errorf("no prices found for %s in last %v", symbol, duration)
 	}
 
-	return avgN.Float64, exN, tsN, nil
+	return avgN.Float64, exN, tsN.Unix(), nil
 }
