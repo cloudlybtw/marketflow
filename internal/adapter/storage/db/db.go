@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"marketflow/internal/core/domain"
+	"time"
 )
 
 type PostgresClient struct {
@@ -59,4 +60,48 @@ func (p *PostgresClient) GetLowestByExchange(exchange, symbol string) (float64, 
 	}
 
 	return minN, nil
+}
+
+func (p *PostgresClient) GetHighestByExchange(exchange, symbol string) (float64, error) {
+	var maxN float64
+	err := p.Db.QueryRow(`
+	SELECT max_price 
+	FROM prices
+	WHERE pair_name = $1
+	AND exchange = $2
+	ORDER BY timestamp DESC
+	LIMIT 1;`, symbol, exchange).Scan(&maxN)
+	if err != nil {
+		slog.Error(err.Error())
+		return -1, err
+	}
+
+	return maxN, nil
+}
+
+func (p *PostgresClient) GetLowestGlobal(symbol string, duration time.Duration) (float64, error) {
+	var minN sql.NullFloat64
+	query := `
+        SELECT MIN(min_price)
+        FROM prices
+        WHERE pair_name = $1
+    `
+	args := []interface{}{symbol}
+
+	if duration > 0 {
+		query += " AND timestamp >= NOW() - $2::interval"
+		args = append(args, fmt.Sprintf("%f seconds", duration.Seconds()))
+	}
+
+	err := p.Db.QueryRow(query, args...).Scan(&minN)
+	if err != nil {
+		slog.Error("query error", slog.String("err", err.Error()))
+		return -1, err
+	}
+
+	if !minN.Valid {
+		return -1, fmt.Errorf("no prices found for %s in last %v", symbol, duration)
+	}
+
+	return minN.Float64, nil
 }

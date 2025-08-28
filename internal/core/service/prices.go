@@ -52,7 +52,10 @@ func (s *PriceService) GetLowest(exchange, pair string, duration time.Duration) 
 	var err error
 	switch {
 	case exchange == "":
-		return nil, errors.New("temporary unavailable. get lowest")
+		num, err = s.repo.GetLowestGlobal(pair, duration)
+		if err != nil {
+			return nil, err
+		}
 	case exchange != "":
 		num, err = s.repo.GetLowestByExchange(exchange, pair, duration)
 		if err != nil {

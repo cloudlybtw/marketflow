@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"marketflow/internal/adapter/storage/cache"
 	"marketflow/internal/adapter/storage/db"
 	"marketflow/internal/core/domain"
@@ -50,12 +51,17 @@ func (p *PriceRepository) GetLatestByExchange(ctx context.Context, exchange, sym
 }
 
 func (p *PriceRepository) GetLowestByExchange(exchange, symbol string, duration time.Duration) (float64, error) {
+
 	if duration == 0 {
 		return p.Postgres.GetLowestByExchange(exchange, symbol)
 	}
-	prices, err := p.Redis.GetPriceHistoryByExchange(exchange, symbol, time.Now().Add(-duration), time.Now())
+	prices, err := p.Redis.GetPriceHistoryByExchange(symbol, exchange, time.Now().Add(-duration), time.Now())
 	if err != nil || prices == nil {
 		return -1, err
+	}
+
+	if prices == nil || len(prices) == 0 {
+		return -1, fmt.Errorf("no prices found for %s on %s in last %v", symbol, exchange, duration)
 	}
 	var minN float64
 	minN = 0
@@ -63,6 +69,33 @@ func (p *PriceRepository) GetLowestByExchange(exchange, symbol string, duration 
 		if minN == 0 || price.Price < minN {
 			minN = price.Price
 		}
+	}
+	return minN, nil
+}
+
+func (p *PriceRepository) GetLowestGlobal(symbol string, duration time.Duration) (float64, error) {
+	if duration == 0 {
+		// вариант без периода: берём из Postgres
+		return p.Postgres.GetLowestGlobal(symbol, duration)
+	}
+
+	// вариант с периодом: достаём историю из Redis по всем exchange
+	exchanges := []string{"exchange1", "exchange2", "exchange3"} 
+	var minN float64
+	for _, ex := range exchanges {
+		prices, err := p.Redis.GetPriceHistoryByExchange(symbol, ex, time.Now().Add(-duration), time.Now())
+		if err != nil || len(prices) == 0 {
+			continue
+		}
+		for _, price := range prices {
+			if minN == 0 || price.Price < minN {
+				minN = price.Price
+			}
+		}
+	}
+
+	if minN == 0 {
+		return -1, fmt.Errorf("no prices found for %s in last %v", symbol, duration)
 	}
 	return minN, nil
 }

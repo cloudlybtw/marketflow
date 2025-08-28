@@ -21,7 +21,7 @@ func NewMockExchange(exchanges []config.Exchange, logger *slog.Logger) *MockExch
 
 func (m *MockExchange) ReadData(ctx context.Context, exchange config.Exchange, out chan<- domain.Message) error {
 	// Канал для генератора
-	genOut := make(chan domain.PriceUpdate, 100)
+	genOut := make(chan domain.PriceUp, 100)
 
 	// Запуск генератора
 	go m.gen.Start(ctx, genOut)
@@ -31,7 +31,7 @@ func (m *MockExchange) ReadData(ctx context.Context, exchange config.Exchange, o
 		case <-ctx.Done():
 			return nil
 		case pu := <-genOut:
-			raw, _ := json.Marshal(pu) // маршалим PriceUpdate в JSON
+			raw, _ := json.Marshal(pu) 
 			msg := domain.Message{
 				Exchange:  exchange.Name,
 				Timestamp: time.Now(), // здесь или int64/или time.Time, зависит от твоего domain

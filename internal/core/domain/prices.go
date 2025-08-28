@@ -17,3 +17,10 @@ type CoinStats struct {
 	FirstSeen time.Time `json:"first_seen"`
 	LastSeen  time.Time `json:"last_seen"`
 }
+
+type PriceUp struct {
+	Symbol    string  `json:"symbol"`
+	Price     float64 `json:"price"`
+	Exchange  string  `json:"exchange"`
+	Timestamp int64   `json:"timestamp"`
+}

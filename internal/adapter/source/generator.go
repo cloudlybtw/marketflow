@@ -30,7 +30,7 @@ func NewGenerator(exchanges []config.Exchange, logger *slog.Logger) *Generator {
 	}
 }
 
-func (g *Generator) Start(ctx context.Context, output chan<- domain.PriceUpdate) {
+func (g *Generator) Start(ctx context.Context, output chan<- domain.PriceUp) {
 	g.logger.Info("Starting test data generator")
 
 	symbols := []string{"BTCUSDT", "ETHUSDT", "DOGEUSDT", "TONUSDT", "SOLUSDT"}
@@ -61,7 +61,7 @@ func (g *Generator) Start(ctx context.Context, output chan<- domain.PriceUpdate)
 	}
 }
 
-func (g *Generator) generatePriceUpdate(symbol, exchange string) domain.PriceUpdate {
+func (g *Generator) generatePriceUpdate(symbol, exchange string) domain.PriceUp {
 	basePrice := g.basePrices[symbol]
 
 	change := (rand.Float64() - 0.5) * 0.02
@@ -69,9 +69,10 @@ func (g *Generator) generatePriceUpdate(symbol, exchange string) domain.PriceUpd
 
 	g.basePrices[symbol] = newPrice
 
-	return domain.PriceUpdate{
+	return domain.PriceUp{
 		Symbol:    symbol,
 		Price:     newPrice,
+		Exchange: exchange,
 		Timestamp: time.Now().Unix(),
 	}
 }

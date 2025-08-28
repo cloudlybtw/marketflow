@@ -13,13 +13,14 @@ type PriceRepository interface {
 	GetLatestByExchange(ctx context.Context, exchange, symbol string) (float64, error)
 	GetLowestByExchange(exchange, symbol string, duration time.Duration) (float64, error)
 	Health(ctx context.Context) error
+	GetLowestGlobal(symbol string, duration time.Duration) (float64, error)
 }
 
 type PriceService interface {
 	SavePrice(ctx context.Context, in <-chan domain.Message)
 	GetLatest(ctx context.Context, exchange string, pair string) (*domain.PriceUpdate, error)
-	// GetHighest()
+	// GetHighest(exchange, pair string, duration time.Duration) (*domain.PriceUpdate, error)
 	GetLowest(exchange, pair string, duration time.Duration) (*domain.PriceUpdate, error)
-	// GetAverage()
+	// GetAverage(exchange, pair string, duration time.Duration) (*domain.PriceUpdate, error)
 	CheckHealth(ctx context.Context) error
 }
