@@ -80,7 +80,7 @@ func (p *PriceRepository) GetLowestGlobal(symbol string, duration time.Duration)
 	}
 
 	// вариант с периодом: достаём историю из Redis по всем exchange
-	exchanges := []string{"exchange1", "exchange2", "exchange3"} 
+	exchanges := []string{"exchange1", "exchange2", "exchange3"}
 	var minN float64
 	for _, ex := range exchanges {
 		prices, err := p.Redis.GetPriceHistoryByExchange(symbol, ex, time.Now().Add(-duration), time.Now())
@@ -98,4 +98,48 @@ func (p *PriceRepository) GetLowestGlobal(symbol string, duration time.Duration)
 		return -1, fmt.Errorf("no prices found for %s in last %v", symbol, duration)
 	}
 	return minN, nil
+}
+
+func (p *PriceRepository) GetHighestByExchange(exchange, symbol string, duration time.Duration) (float64, error) {
+	if duration == 0 {
+		return p.Postgres.GetHighestByExchange(exchange, symbol)
+	}
+	prices, err := p.Redis.GetPriceHistoryByExchange(symbol, exchange, time.Now().Add(-duration), time.Now())
+	if err != nil || len(prices) == 0 {
+		return -1, err
+	}
+	var maxN float64
+	for _, price := range prices {
+		if price.Price > maxN {
+			maxN = price.Price
+		}
+	}
+	return maxN, nil
+}
+
+func (p *PriceRepository) GetHighestGlobal(symbol string, duration time.Duration) (float64, error) {
+	if duration == 0 {
+		return p.Postgres.GetHighestGlobal(symbol, duration)
+	}
+
+	// если Redis — аналогично lowest, только ищем максимум
+	exchanges := []string{"exchange1", "exchange2", "exchange3"} // можно в конфиг
+	var maxN float64
+	for _, ex := range exchanges {
+		prices, err := p.Redis.GetPriceHistoryByExchange(symbol, ex, time.Now().Add(-duration), time.Now())
+		if err != nil || len(prices) == 0 {
+			continue
+		}
+		for _, price := range prices {
+			if price.Price > maxN {
+				maxN = price.Price
+			}
+		}
+	}
+
+	if maxN == 0 {
+		return -1, fmt.Errorf("no prices found for %s in last %v", symbol, duration)
+	}
+
+	return maxN, nil
 }

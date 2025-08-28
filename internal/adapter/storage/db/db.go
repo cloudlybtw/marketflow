@@ -62,23 +62,6 @@ func (p *PostgresClient) GetLowestByExchange(exchange, symbol string) (float64, 
 	return minN, nil
 }
 
-func (p *PostgresClient) GetHighestByExchange(exchange, symbol string) (float64, error) {
-	var maxN float64
-	err := p.Db.QueryRow(`
-	SELECT max_price 
-	FROM prices
-	WHERE pair_name = $1
-	AND exchange = $2
-	ORDER BY timestamp DESC
-	LIMIT 1;`, symbol, exchange).Scan(&maxN)
-	if err != nil {
-		slog.Error(err.Error())
-		return -1, err
-	}
-
-	return maxN, nil
-}
-
 func (p *PostgresClient) GetLowestGlobal(symbol string, duration time.Duration) (float64, error) {
 	var minN sql.NullFloat64
 	query := `
@@ -104,4 +87,51 @@ func (p *PostgresClient) GetLowestGlobal(symbol string, duration time.Duration) 
 	}
 
 	return minN.Float64, nil
+}
+
+// максимальная цена по конкретной бирже (последняя запись)
+func (p *PostgresClient) GetHighestByExchange(exchange, symbol string) (float64, error) {
+	var maxN float64
+	err := p.Db.QueryRow(`
+        SELECT max_price
+        FROM prices
+        WHERE pair_name = $1
+          AND exchange = $2
+        ORDER BY timestamp DESC
+        LIMIT 1;`, symbol, exchange).Scan(&maxN)
+
+	if err != nil {
+		slog.Error(err.Error())
+		return -1, err
+	}
+
+	return maxN, nil
+}
+
+// глобальный максимум по всем биржам, опционально за период
+func (p *PostgresClient) GetHighestGlobal(symbol string, duration time.Duration) (float64, error) {
+	var maxN sql.NullFloat64
+	query := `
+        SELECT MAX(max_price)
+        FROM prices
+        WHERE pair_name = $1
+    `
+	args := []interface{}{symbol}
+
+	if duration > 0 {
+		query += " AND timestamp >= NOW() - $2::interval"
+		args = append(args, fmt.Sprintf("%f seconds", duration.Seconds()))
+	}
+
+	err := p.Db.QueryRow(query, args...).Scan(&maxN)
+	if err != nil {
+		slog.Error("query error", slog.String("err", err.Error()))
+		return -1, err
+	}
+
+	if !maxN.Valid {
+		return -1, fmt.Errorf("no prices found for %s in last %v", symbol, duration)
+	}
+
+	return maxN.Float64, nil
 }
