@@ -2,11 +2,11 @@ package domain
 
 import "time"
 
-type PriceUpdate struct {
-	Symbol    string  `json:"symbol"`
-	Price     float64 `json:"price"`
-	Timestamp int64   `json:"timestamp"`
-}
+// type PriceUpdate struct {
+// 	Symbol    string  `json:"symbol"`
+// 	Price     float64 `json:"price"`
+// 	Timestamp int64   `json:"timestamp"`
+// }
 
 type CoinStats struct {
 	MinPrice  float64   `json:"min_price"`
@@ -18,7 +18,7 @@ type CoinStats struct {
 	LastSeen  time.Time `json:"last_seen"`
 }
 
-type PriceUp struct {
+type PriceUpdate struct {
 	Symbol    string  `json:"symbol"`
 	Price     float64 `json:"price"`
 	Exchange  string  `json:"exchange"`

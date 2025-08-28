@@ -42,46 +42,50 @@ func (p *PriceRepository) SaveAggregated(data domain.AggregatedData) error {
 	return p.Postgres.SaveAggregatedData(data)
 }
 
-func (p *PriceRepository) GetLatest(ctx context.Context, symbol string) (float64, error) {
+func (p *PriceRepository) GetLatest(ctx context.Context, symbol string) (float64, string, error) {
 	return p.Redis.GetLatestPrice(ctx, "", symbol)
 }
 
-func (p *PriceRepository) GetLatestByExchange(ctx context.Context, exchange, symbol string) (float64, error) {
+func (p *PriceRepository) GetLatestByExchange(ctx context.Context, exchange, symbol string) (float64, string, error) {
 	return p.Redis.GetLatestPrice(ctx, exchange, symbol)
 }
 
-func (p *PriceRepository) GetLowestByExchange(exchange, symbol string, duration time.Duration) (float64, error) {
+func (p *PriceRepository) GetLowestByExchange(exchange, symbol string, duration time.Duration) (float64, string, int64, error) {
 
 	if duration == 0 {
 		return p.Postgres.GetLowestByExchange(exchange, symbol)
 	}
 	prices, err := p.Redis.GetPriceHistoryByExchange(symbol, exchange, time.Now().Add(-duration), time.Now())
 	if err != nil || prices == nil {
-		return -1, err
+		return -1, "", time.Now().Unix(), err
 	}
 
 	if prices == nil || len(prices) == 0 {
-		return -1, fmt.Errorf("no prices found for %s on %s in last %v", symbol, exchange, duration)
+		return -1, "", time.Now().Unix(), fmt.Errorf("no prices found for %s on %s in last %v", symbol, exchange, duration)
 	}
 	var minN float64
+	var tsN int64
 	minN = 0
+
 	for _, price := range prices {
 		if minN == 0 || price.Price < minN {
 			minN = price.Price
+			tsN = price.Timestamp
 		}
 	}
-	return minN, nil
+	return minN, exchange, tsN, nil
 }
 
-func (p *PriceRepository) GetLowestGlobal(symbol string, duration time.Duration) (float64, error) {
+func (p *PriceRepository) GetLowestGlobal(symbol string, duration time.Duration) (float64, string, int64, error) {
 	if duration == 0 {
-		
+
 		return p.Postgres.GetLowestGlobal(symbol, duration)
 	}
 
-	
 	exchanges := []string{"exchange1", "exchange2", "exchange3"}
 	var minN float64
+	var exN string
+	var tsN int64
 	for _, ex := range exchanges {
 		prices, err := p.Redis.GetPriceHistoryByExchange(symbol, ex, time.Now().Add(-duration), time.Now())
 		if err != nil || len(prices) == 0 {
@@ -90,40 +94,48 @@ func (p *PriceRepository) GetLowestGlobal(symbol string, duration time.Duration)
 		for _, price := range prices {
 			if minN == 0 || price.Price < minN {
 				minN = price.Price
+				exN = ex
+				tsN = price.Timestamp
 			}
 		}
 	}
 
 	if minN == 0 {
-		return -1, fmt.Errorf("no prices found for %s in last %v", symbol, duration)
+		return -1, "", time.Now().Unix(), fmt.Errorf("no prices found for %s in last %v", symbol, duration)
 	}
-	return minN, nil
+	return minN, exN, tsN, nil
 }
 
-func (p *PriceRepository) GetHighestByExchange(exchange, symbol string, duration time.Duration) (float64, error) {
+func (p *PriceRepository) GetHighestByExchange(exchange, symbol string, duration time.Duration) (float64, string, int64, error) {
 	if duration == 0 {
 		return p.Postgres.GetHighestByExchange(exchange, symbol)
 	}
 	prices, err := p.Redis.GetPriceHistoryByExchange(symbol, exchange, time.Now().Add(-duration), time.Now())
 	if err != nil || len(prices) == 0 {
-		return -1, err
+		return -1, "", time.Now().Unix(), err
 	}
 	var maxN float64
+	var exN string
+	var tsN int64
 	for _, price := range prices {
 		if price.Price > maxN {
 			maxN = price.Price
+			exN = price.Exchange
+			tsN = price.Timestamp
 		}
 	}
-	return maxN, nil
+	return maxN, exN, tsN, nil
 }
 
-func (p *PriceRepository) GetHighestGlobal(symbol string, duration time.Duration) (float64, error) {
+func (p *PriceRepository) GetHighestGlobal(symbol string, duration time.Duration) (float64, string, int64, error) {
 	if duration == 0 {
 		return p.Postgres.GetHighestGlobal(symbol, duration)
 	}
 
-	exchanges := []string{"exchange1", "exchange2", "exchange3"} 
+	exchanges := []string{"exchange1", "exchange2", "exchange3"}
 	var maxN float64
+	var exN string
+	var tsN int64
 	for _, ex := range exchanges {
 		prices, err := p.Redis.GetPriceHistoryByExchange(symbol, ex, time.Now().Add(-duration), time.Now())
 		if err != nil || len(prices) == 0 {
@@ -132,44 +144,47 @@ func (p *PriceRepository) GetHighestGlobal(symbol string, duration time.Duration
 		for _, price := range prices {
 			if price.Price > maxN {
 				maxN = price.Price
+				exN = price.Exchange
+				tsN = price.Timestamp
 			}
 		}
 	}
 
 	if maxN == 0 {
-		return -1, fmt.Errorf("no prices found for %s in last %v", symbol, duration)
+		return -1, "", time.Now().Unix(), fmt.Errorf("no prices found for %s in last %v", symbol, duration)
 	}
 
-	return maxN, nil
+	return maxN, exN, tsN, nil
 }
 
-
-func (p *PriceRepository) GetAverageByExchange(exchange, symbol string, duration time.Duration) (float64, error) {
+func (p *PriceRepository) GetAverageByExchange(exchange, symbol string, duration time.Duration) (float64, string, int64, error) {
 	if duration == 0 {
 		return p.Postgres.GetAverageByExchange(exchange, symbol)
 	}
 	prices, err := p.Redis.GetPriceHistoryByExchange(symbol, exchange, time.Now().Add(-duration), time.Now())
 	if err != nil || len(prices) == 0 {
-		return -1, err
+		return -1, "", time.Now().Unix(), err
 	}
 	var avgN float64
+	var exN string
+	var tsN int64
 	for _, price := range prices {
 		if price.Price > avgN {
 			avgN = price.Price
 		}
 	}
-	return avgN, nil
+	return avgN, exN, tsN, nil
 }
 
-
-func (p *PriceRepository) GetAverageGlobal(symbol string, duration time.Duration) (float64, error) {
+func (p *PriceRepository) GetAverageGlobal(symbol string, duration time.Duration) (float64, string, int64, error) {
 	if duration == 0 {
 		return p.Postgres.GetAverageGlobal(symbol, duration)
 	}
 
-
-	exchanges := []string{"exchange1", "exchange2", "exchange3"} 
+	exchanges := []string{"exchange1", "exchange2", "exchange3"}
 	var avgN float64
+	var exN string
+	var tsN int64
 	for _, ex := range exchanges {
 		prices, err := p.Redis.GetPriceHistoryByExchange(symbol, ex, time.Now().Add(-duration), time.Now())
 		if err != nil || len(prices) == 0 {
@@ -183,8 +198,8 @@ func (p *PriceRepository) GetAverageGlobal(symbol string, duration time.Duration
 	}
 
 	if avgN == 0 {
-		return -1, fmt.Errorf("no prices found for %s in last %v", symbol, duration)
+		return -1, "", time.Now().Unix(), fmt.Errorf("no prices found for %s in last %v", symbol, duration)
 	}
 
-	return avgN, nil
+	return avgN, exN, tsN, nil
 }

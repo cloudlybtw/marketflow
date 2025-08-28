@@ -25,15 +25,16 @@ func (s *PriceService) CheckHealth(ctx context.Context) error {
 
 func (s *PriceService) GetLatest(ctx context.Context, exchange string, pair string) (*domain.PriceUpdate, error) {
 	var num float64
+	var ex string
 	var err error
 	switch {
 	case exchange == "":
-		num, err = s.repo.GetLatest(ctx, pair)
+		num, ex, err = s.repo.GetLatest(ctx, pair)
 		if err != nil {
 			return nil, err
 		}
 	case exchange != "":
-		num, err = s.repo.GetLatestByExchange(ctx, exchange, pair)
+		num, ex, err = s.repo.GetLatestByExchange(ctx, exchange, pair)
 		if err != nil {
 			return nil, err
 		}
@@ -43,21 +44,24 @@ func (s *PriceService) GetLatest(ctx context.Context, exchange string, pair stri
 	return &domain.PriceUpdate{
 		Symbol:    pair,
 		Price:     num,
+		Exchange:  ex,
 		Timestamp: time.Now().Unix(),
 	}, nil
 }
 
 func (s *PriceService) GetLowest(exchange, pair string, duration time.Duration) (*domain.PriceUpdate, error) {
 	var num float64
+	var ex string
+	var ts int64
 	var err error
 	switch {
 	case exchange == "":
-		num, err = s.repo.GetLowestGlobal(pair, duration)
+		num, ex, ts, err = s.repo.GetLowestGlobal(pair, duration)
 		if err != nil {
 			return nil, err
 		}
 	case exchange != "":
-		num, err = s.repo.GetLowestByExchange(exchange, pair, duration)
+		num, ex, ts, err = s.repo.GetLowestByExchange(exchange, pair, duration)
 		if err != nil {
 			return nil, err
 		}
@@ -68,21 +72,24 @@ func (s *PriceService) GetLowest(exchange, pair string, duration time.Duration) 
 	return &domain.PriceUpdate{
 		Symbol:    pair,
 		Price:     num,
-		Timestamp: time.Now().Unix(),
+		Exchange:  ex,
+		Timestamp: ts,
 	}, nil
 }
 
 func (s *PriceService) GetHighest(exchange, pair string, duration time.Duration) (*domain.PriceUpdate, error) {
 	var num float64
+	var ex string
+	var ts int64
 	var err error
 
 	if exchange == "" {
-		num, err = s.repo.GetHighestGlobal(pair, duration)
+		num, ex, ts, err = s.repo.GetHighestGlobal(pair, duration)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		num, err = s.repo.GetHighestByExchange(exchange, pair, duration)
+		num, ex, ts, err = s.repo.GetHighestByExchange(exchange, pair, duration)
 		if err != nil {
 			return nil, err
 		}
@@ -91,21 +98,24 @@ func (s *PriceService) GetHighest(exchange, pair string, duration time.Duration)
 	return &domain.PriceUpdate{
 		Symbol:    pair,
 		Price:     num,
-		Timestamp: time.Now().Unix(),
+		Exchange:  ex,
+		Timestamp: ts,
 	}, nil
 }
 
 func (s *PriceService) GetAverage(exchange, pair string, duration time.Duration) (*domain.PriceUpdate, error) {
 	var num float64
+	var ex string
+	var ts int64
 	var err error
 
 	if exchange == "" {
-		num, err = s.repo.GetAverageGlobal(pair, duration)
+		num, ex, ts, err = s.repo.GetAverageGlobal(pair, duration)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		num, err = s.repo.GetAverageByExchange(exchange, pair, duration)
+		num, ex, ts, err = s.repo.GetAverageByExchange(exchange, pair, duration)
 		if err != nil {
 			return nil, err
 		}
@@ -114,6 +124,7 @@ func (s *PriceService) GetAverage(exchange, pair string, duration time.Duration)
 	return &domain.PriceUpdate{
 		Symbol:    pair,
 		Price:     num,
-		Timestamp: time.Now().Unix(),
+		Exchange:  ex,
+		Timestamp: ts,
 	}, nil
 }

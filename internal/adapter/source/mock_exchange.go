@@ -20,10 +20,9 @@ func NewMockExchange(exchanges []config.Exchange, logger *slog.Logger) *MockExch
 }
 
 func (m *MockExchange) ReadData(ctx context.Context, exchange config.Exchange, out chan<- domain.Message) error {
-	
-	genOut := make(chan domain.PriceUp, 100)
 
-	
+	genOut := make(chan domain.PriceUpdate, 100)
+
 	go m.gen.Start(ctx, genOut)
 
 	for {
@@ -31,10 +30,10 @@ func (m *MockExchange) ReadData(ctx context.Context, exchange config.Exchange, o
 		case <-ctx.Done():
 			return nil
 		case pu := <-genOut:
-			raw, _ := json.Marshal(pu) 
+			raw, _ := json.Marshal(pu)
 			msg := domain.Message{
 				Exchange:  exchange.Name,
-				Timestamp: time.Now(), 
+				Timestamp: time.Now(),
 				Raw:       raw,
 			}
 			select {
@@ -42,7 +41,7 @@ func (m *MockExchange) ReadData(ctx context.Context, exchange config.Exchange, o
 			case <-ctx.Done():
 				return nil
 			default:
-			
+
 			}
 		}
 	}
