@@ -21,7 +21,7 @@ func (p *PostgresClient) Ping() error {
 }
 
 func (p *PostgresClient) SaveAggregatedData(data domain.AggregatedData) error {
-	tx, err := postgresDB.Begin()
+	tx, err := p.Db.Begin() // fixed from postgresDB.Begin() to p.Db.Begin()
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,8 @@ func (p *PostgresClient) SaveAggregatedData(data domain.AggregatedData) error {
 			_, err = tx.Exec(`
 				INSERT INTO prices (pair_name, exchange, timestamp, average_price, min_price, max_price) 
 				VALUES ($1, $2, $3, $4, $5, $6);
-				`, pair, key, stat.LastSeen, stat.AvgPrice, stat.MinPrice, stat.MaxPrice)
+			`, pair, key, stat.LastSeen, stat.AvgPrice, stat.MinPrice, stat.MaxPrice)
+
 			if err != nil {
 				slog.Error(err.Error())
 				tx.Rollback()
@@ -50,12 +51,13 @@ func (p *PostgresClient) GetLowestByExchange(exchange, symbol string) (float64, 
 	var exN string
 	var tsN time.Time
 	err := p.Db.QueryRow(`
-	SELECT min_price, exchange, timestamp
-	FROM prices
-	WHERE pair_name = $1
-	AND exchange = $2
-	ORDER BY min_price ASC
-	LIMIT 1;`, symbol, exchange).Scan(&minN, &exN, &tsN)
+		SELECT min_price, exchange, timestamp
+		FROM prices
+		WHERE pair_name = $1
+		  AND exchange = $2
+		ORDER BY min_price ASC
+		LIMIT 1;
+	`, symbol, exchange).Scan(&minN, &exN, &tsN)
 	if err != nil {
 		slog.Error(err.Error())
 		return -1, "", time.Now().Unix(), err
@@ -68,11 +70,12 @@ func (p *PostgresClient) GetLowestGlobal(symbol string, duration time.Duration) 
 	var minN sql.NullFloat64
 	var exN string
 	var tsN time.Time
+
 	query := `
-        SELECT min_price, exchange, timestamp
+		SELECT min_price, exchange, timestamp
 		FROM prices
 		WHERE pair_name = $1
-    `
+	`
 	args := []interface{}{symbol}
 
 	if duration > 0 {
@@ -82,7 +85,8 @@ func (p *PostgresClient) GetLowestGlobal(symbol string, duration time.Duration) 
 
 	err := p.Db.QueryRow(query+`
 		ORDER BY min_price ASC
-		LIMIT 1`, args...).Scan(&minN, &exN, &tsN)
+		LIMIT 1
+	`, args...).Scan(&minN, &exN, &tsN) // FIXED: args...
 	if err != nil {
 		slog.Error("query error", slog.String("err", err.Error()))
 		return -1, "", time.Now().Unix(), err
@@ -100,13 +104,13 @@ func (p *PostgresClient) GetHighestByExchange(exchange, symbol string) (float64,
 	var exN string
 	var tsN time.Time
 	err := p.Db.QueryRow(`
-        SELECT max_price, exchange, timestamp
-        FROM prices
-        WHERE pair_name = $1
-          AND exchange = $2
-        ORDER BY max_price DESC
-        LIMIT 1;`, symbol, exchange).Scan(&maxN, &exN, &tsN)
-
+		SELECT max_price, exchange, timestamp
+		FROM prices
+		WHERE pair_name = $1
+		  AND exchange = $2
+		ORDER BY max_price DESC
+		LIMIT 1;
+	`, symbol, exchange).Scan(&maxN, &exN, &tsN)
 	if err != nil {
 		slog.Error(err.Error())
 		return -1, "", time.Now().Unix(), err
@@ -119,11 +123,12 @@ func (p *PostgresClient) GetHighestGlobal(symbol string, duration time.Duration)
 	var maxN sql.NullFloat64
 	var exN string
 	var tsN time.Time
+
 	query := `
-        SELECT max_price, exchange, timestamp
+		SELECT max_price, exchange, timestamp
 		FROM prices
 		WHERE pair_name = $1
-    `
+	`
 	args := []interface{}{symbol}
 
 	if duration > 0 {
@@ -133,7 +138,8 @@ func (p *PostgresClient) GetHighestGlobal(symbol string, duration time.Duration)
 
 	err := p.Db.QueryRow(query+`
 		ORDER BY max_price DESC
-		LIMIT 1`, args...).Scan(&maxN, &exN, &tsN)
+		LIMIT 1
+	`, args...).Scan(&maxN, &exN, &tsN) // FIXED: args...
 	if err != nil {
 		slog.Error("query error", slog.String("err", err.Error()))
 		return -1, "", time.Now().Unix(), err
@@ -149,12 +155,13 @@ func (p *PostgresClient) GetHighestGlobal(symbol string, duration time.Duration)
 func (p *PostgresClient) GetAverageByExchange(exchange, symbol string) (float64, string, int64, error) {
 	var avgN float64
 	var tsN time.Time
-	err := p.Db.QueryRow(`
-        SELECT AVG(average_price), $2 as exchange, MAX(timestamp)
-        FROM prices
-        WHERE pair_name = $1
-          AND exchange = $2;`, symbol, exchange).Scan(&avgN, &exchange, &tsN)
 
+	err := p.Db.QueryRow(`
+		SELECT AVG(average_price), $2 as exchange, MAX(timestamp)
+		FROM prices
+		WHERE pair_name = $1
+		  AND exchange = $2;
+	`, symbol, exchange).Scan(&avgN, &exchange, &tsN)
 	if err != nil {
 		slog.Error(err.Error())
 		return -1, "", time.Now().Unix(), err
@@ -167,11 +174,12 @@ func (p *PostgresClient) GetAverageGlobal(symbol string, duration time.Duration)
 	var avgN sql.NullFloat64
 	var tsN time.Time
 	exN := ""
+
 	query := `
-        SELECT AVG(average_price), '' as exchange, MAX(timestamp)
-        FROM prices
-        WHERE pair_name = $1
-    `
+		SELECT AVG(average_price), '' as exchange, MAX(timestamp)
+		FROM prices
+		WHERE pair_name = $1
+	`
 	args := []interface{}{symbol}
 
 	if duration > 0 {
@@ -179,7 +187,7 @@ func (p *PostgresClient) GetAverageGlobal(symbol string, duration time.Duration)
 		args = append(args, fmt.Sprintf("%f seconds", duration.Seconds()))
 	}
 
-	err := p.Db.QueryRow(query, args...).Scan(&avgN, &exN, &tsN)
+	err := p.Db.QueryRow(query, args...).Scan(&avgN, &exN, &tsN) // FIXED: args...
 	if err != nil {
 		slog.Error("query error", slog.String("err", err.Error()))
 		return -1, "", time.Now().Unix(), err

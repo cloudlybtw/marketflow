@@ -3,11 +3,10 @@ package cache
 import (
 	"context"
 	"log/slog"
-	"strconv"
-	"time"
-
 	"marketflow/internal/adapter/config"
 	"marketflow/internal/core/domain"
+	"strconv"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -129,6 +128,7 @@ func (r *RedisClient) GetLatestPrice(ctx context.Context, exchange, pair string)
 			r.logger.Error(err.Error())
 			return -1, "", err
 		}
+
 	}
 
 	return f, exchange, nil

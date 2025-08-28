@@ -51,7 +51,6 @@ func (p *PriceRepository) GetLatestByExchange(ctx context.Context, exchange, sym
 }
 
 func (p *PriceRepository) GetLowestByExchange(exchange, symbol string, duration time.Duration) (float64, string, int64, error) {
-
 	if duration == 0 {
 		return p.Postgres.GetLowestByExchange(exchange, symbol)
 	}
@@ -78,7 +77,6 @@ func (p *PriceRepository) GetLowestByExchange(exchange, symbol string, duration 
 
 func (p *PriceRepository) GetLowestGlobal(symbol string, duration time.Duration) (float64, string, int64, error) {
 	if duration == 0 {
-
 		return p.Postgres.GetLowestGlobal(symbol, duration)
 	}
 
@@ -115,16 +113,14 @@ func (p *PriceRepository) GetHighestByExchange(exchange, symbol string, duration
 		return -1, "", time.Now().Unix(), err
 	}
 	var maxN float64
-	var exN string
 	var tsN int64
 	for _, price := range prices {
 		if price.Price > maxN {
 			maxN = price.Price
-			exN = price.Exchange
 			tsN = price.Timestamp
 		}
 	}
-	return maxN, exN, tsN, nil
+	return maxN, exchange, tsN, nil
 }
 
 func (p *PriceRepository) GetHighestGlobal(symbol string, duration time.Duration) (float64, string, int64, error) {

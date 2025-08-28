@@ -1,6 +1,6 @@
 module marketflow
 
-go 1.22.6
+go 1.22
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
