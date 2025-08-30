@@ -115,7 +115,7 @@ func (p *PriceRepository) GetHighestByExchange(exchange, symbol string, duration
 	var maxN float64
 	var tsN int64
 	for _, price := range prices {
-		if price.Price > maxN {
+		if maxN == 0 || price.Price > maxN {
 			maxN = price.Price
 			tsN = price.Timestamp
 		}
@@ -138,9 +138,9 @@ func (p *PriceRepository) GetHighestGlobal(symbol string, duration time.Duration
 			continue
 		}
 		for _, price := range prices {
-			if price.Price > maxN {
+			if maxN == 0 || price.Price > maxN {
 				maxN = price.Price
-				exN = price.Exchange
+				exN = ex
 				tsN = price.Timestamp
 			}
 		}
@@ -162,14 +162,12 @@ func (p *PriceRepository) GetAverageByExchange(exchange, symbol string, duration
 		return -1, "", time.Now().Unix(), err
 	}
 	var avgN float64
-	var exN string
-	var tsN int64
 	for _, price := range prices {
 		if price.Price > avgN {
 			avgN = price.Price
 		}
 	}
-	return avgN, exN, tsN, nil
+	return avgN, exchange, time.Now().Unix(), nil
 }
 
 func (p *PriceRepository) GetAverageGlobal(symbol string, duration time.Duration) (float64, string, int64, error) {
@@ -179,8 +177,6 @@ func (p *PriceRepository) GetAverageGlobal(symbol string, duration time.Duration
 
 	exchanges := []string{"exchange1", "exchange2", "exchange3"}
 	var avgN float64
-	var exN string
-	var tsN int64
 	for _, ex := range exchanges {
 		prices, err := p.Redis.GetPriceHistoryByExchange(symbol, ex, time.Now().Add(-duration), time.Now())
 		if err != nil || len(prices) == 0 {
@@ -197,5 +193,5 @@ func (p *PriceRepository) GetAverageGlobal(symbol string, duration time.Duration
 		return -1, "", time.Now().Unix(), fmt.Errorf("no prices found for %s in last %v", symbol, duration)
 	}
 
-	return avgN, exN, tsN, nil
+	return avgN, "combined", time.Now().Unix(), nil
 }

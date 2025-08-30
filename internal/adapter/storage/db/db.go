@@ -173,6 +173,7 @@ func (p *PostgresClient) GetAverageByExchange(exchange, symbol string) (float64,
 func (p *PostgresClient) GetAverageGlobal(symbol string, duration time.Duration) (float64, string, int64, error) {
 	var avgN sql.NullFloat64
 	var tsN time.Time
+<<<<<<< HEAD
 	exN := ""
 
 	query := `
@@ -180,6 +181,13 @@ func (p *PostgresClient) GetAverageGlobal(symbol string, duration time.Duration)
 		FROM prices
 		WHERE pair_name = $1
 	`
+=======
+	query := `
+        SELECT AVG(average_price), MAX(timestamp)
+        FROM prices
+        WHERE pair_name = $1
+    `
+>>>>>>> changes
 	args := []interface{}{symbol}
 
 	if duration > 0 {
@@ -187,7 +195,11 @@ func (p *PostgresClient) GetAverageGlobal(symbol string, duration time.Duration)
 		args = append(args, fmt.Sprintf("%f seconds", duration.Seconds()))
 	}
 
+<<<<<<< HEAD
 	err := p.Db.QueryRow(query, args...).Scan(&avgN, &exN, &tsN) // FIXED: args...
+=======
+	err := p.Db.QueryRow(query, args...).Scan(&avgN, &tsN)
+>>>>>>> changes
 	if err != nil {
 		slog.Error("query error", slog.String("err", err.Error()))
 		return -1, "", time.Now().Unix(), err
@@ -197,5 +209,5 @@ func (p *PostgresClient) GetAverageGlobal(symbol string, duration time.Duration)
 		return -1, "", time.Now().Unix(), fmt.Errorf("no prices found for %s in last %v", symbol, duration)
 	}
 
-	return avgN.Float64, exN, tsN.Unix(), nil
+	return avgN.Float64, "combined", tsN.Unix(), nil
 }
