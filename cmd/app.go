@@ -5,20 +5,20 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
 	"marketflow/internal/adapter/config"
-	handler "marketflow/internal/adapter/http"
 	"marketflow/internal/adapter/logger"
 	"marketflow/internal/adapter/source"
 	"marketflow/internal/adapter/storage"
 	"marketflow/internal/adapter/storage/cache"
 	"marketflow/internal/adapter/storage/db"
 	"marketflow/internal/core/service"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	handler "marketflow/internal/adapter/http"
 )
 
 var PortN int

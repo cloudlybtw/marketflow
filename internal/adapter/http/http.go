@@ -2,14 +2,13 @@ package http
 
 import (
 	"errors"
-	"net/http"
-	"strings"
-	"time"
-
 	"marketflow/internal/adapter/source"
 	"marketflow/internal/core/domain"
 	"marketflow/internal/core/port"
 	"marketflow/internal/core/service"
+	"net/http"
+	"strings"
+	"time"
 )
 
 type HTTPHandler struct {

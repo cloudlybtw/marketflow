@@ -3,10 +3,9 @@ package service
 import (
 	"context"
 	"errors"
-	"time"
-
 	"marketflow/internal/core/domain"
 	"marketflow/internal/core/port"
+	"time"
 )
 
 type PriceService struct {

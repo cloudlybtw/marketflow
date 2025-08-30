@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"time"
-
 	"marketflow/internal/core/domain"
+	"time"
 )
 
 // AggregateAndSaveByExchange

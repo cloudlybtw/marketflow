@@ -20,7 +20,6 @@ func NewMockExchange(exchanges []config.Exchange, logger *slog.Logger) *MockExch
 }
 
 func (m *MockExchange) ReadData(ctx context.Context, exchange config.Exchange, out chan<- domain.Message) error {
-
 	genOut := make(chan domain.PriceUpdate, 100)
 
 	go m.gen.Start(ctx, genOut)

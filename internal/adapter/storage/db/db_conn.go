@@ -5,10 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"marketflow/internal/adapter/config"
 	"strconv"
 	"time"
-
-	"marketflow/internal/adapter/config"
 
 	_ "github.com/lib/pq"
 )
@@ -16,7 +15,6 @@ import (
 var postgresDB *sql.DB
 
 func OpenDB(config *config.DB) (*sql.DB, error) {
-
 	// postgres://username:password@host:port/dbname
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", config.User, config.Password, config.Host, config.Port, config.Name)
 

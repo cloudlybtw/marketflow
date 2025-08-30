@@ -6,11 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"net"
-	"time"
-
 	"marketflow/internal/adapter/config"
 	"marketflow/internal/core/domain"
+	"net"
+	"time"
 )
 
 type TCPExchange struct {

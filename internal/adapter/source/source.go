@@ -3,13 +3,10 @@ package source
 import (
 	"context"
 	"log/slog"
-	"sync"
-
-	"marketflow/internal/core/service"
-
 	"marketflow/internal/adapter/config"
-
 	"marketflow/internal/core/domain"
+	"marketflow/internal/core/service"
+	"sync"
 )
 
 var Live = true

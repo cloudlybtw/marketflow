@@ -35,7 +35,9 @@ func (p *PriceRepository) Health(ctx context.Context) error {
 }
 
 func (p *PriceRepository) SaveLatest(ctx context.Context, exchange, pair string, price float64) {
-	p.Redis.StorePriceUpdate(ctx, exchange, pair, price)
+	if p.Redis.Ping(ctx) == nil {
+		p.Redis.StorePriceUpdate(ctx, exchange, pair, price)
+	}
 }
 
 func (p *PriceRepository) SaveAggregated(data domain.AggregatedData) error {

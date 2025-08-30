@@ -3,11 +3,10 @@ package source
 import (
 	"context"
 	"log/slog"
-	"math/rand"
-	"time"
-
 	"marketflow/internal/adapter/config"
 	"marketflow/internal/core/domain"
+	"math/rand"
+	"time"
 )
 
 type Generator struct {

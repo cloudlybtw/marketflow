@@ -2,9 +2,8 @@ package logger
 
 import (
 	"log/slog"
-	"os"
-
 	"marketflow/internal/adapter/config"
+	"os"
 )
 
 var logger *slog.Logger
