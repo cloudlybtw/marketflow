@@ -129,6 +129,7 @@ func (r *RedisClient) GetLatestPrice(ctx context.Context, exchange, pair string)
 			r.logger.Error(err.Error())
 			return -1, "", err
 		}
+		exchange = "unknown"
 	}
 
 	return f, exchange, nil
